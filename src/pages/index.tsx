@@ -1,13 +1,124 @@
 import { type NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
+import ccxt from "ccxt";
 import { signIn, signOut, useSession } from "next-auth/react";
-
 import { trpc } from "../utils/trpc";
+import fs from "fs";
+import { loadavg } from "os";
+import { useEffect, useState } from "react";
+import MarketComp from "./marketComp";
+import { exchanges } from "ccxt";
+import { createContext } from "vm";
+import { fileURLToPath } from "url";
 
-const Home: NextPage = () => {
+interface Props {
+  children: any;
+  activeMarkets: any;
+}
+interface State {
+  activeMarkets: any;
+  markets: any;
+}
+const Home: NextPage<Props, State> = () => {
+  let [markets, setMarkets] = useState<any[]>([]);
+  let [activeMarkets, setActiveMarkets] = useState<any[]>([]);
+
+  let [marketLoaded, setMarketLoaded] = useState<boolean>(false);
+  let [priceLoaded, setPriceLoaded] = useState<boolean>(false);
+
+  let [currentPData, setCurrentPData] = useState<any>("");
+  let [currentMData, setCurrentMData] = useState<any>("");
+
+  let newCopy: any = [];
+  console.log(`market = ${marketLoaded}`, `price = ${priceLoaded}`);
+
   const hello = trpc.example.hello.useQuery({ text: "from tRPC" });
+  const lata = trpc.markets.getMarkets.useQuery({ text: `markets` });
 
+  let filterCryptoData: any = (): any => {
+    let cryptoData: any = fileURLToPath("./bitget.json");
+    let cryptoDataString = JSON.stringify(cryptoData);
+    let symbolRegex = /"symbol":(?:"\w{3,})(?:\/...?")("timestamp")/gm;
+    let betweenQuotes = /(["'])((?:(?=(?:\\)*)\\.|.)*?)\1/gm;
+    let allFieldData = /(?:\s*(?:\"([^\"]*)\"|([^,]+))\s*,?)+?/gm;
+
+    let symbolArray = cryptoDataString.match(symbolRegex);
+    let cryptoDataFiltered = cryptoDataString.match(symbolRegex);
+  };
+
+  function CurrentPriceWrapper({ setState }: any) {
+    const pResponse = trpc.readMarkets.readPrices.useQuery({
+      text: "please god",
+    });
+    console.log(pResponse?.data, "data response");
+    let unicodeFilters = {};
+    useEffect(() => {
+      setCurrentPData("loaded");
+    }, [setState, pResponse]);
+    return null;
+  }
+
+  function CurrentMDataWrapper({ setState }: any) {
+    const mResponse = trpc.markets.getPrices.useQuery({ text: "get-prices" });
+    // const json = trpc.markets.readData.useQuery({ text: "read-data" });
+    useEffect(() => {
+      setCurrentMData("loaded");
+    }, [setState, mResponse]);
+    return null;
+  }
+
+  useEffect(() => {
+    console.log(lata.data?.greeting, "data");
+    if (lata.data?.greeting !== undefined) {
+      // console.log("we in");
+      if (markets.length === 0) {
+        let data: any = lata.data;
+        // console.log(data, "data currentMData");
+        setMarkets(data?.greeting);
+      }
+    }
+  }, [lata.data?.greeting]);
+
+  useEffect(() => {
+    console.log(markets, "markets");
+    let count = 0;
+
+    Object.entries(markets).forEach((i, index) => {
+      let currency = Object.values(i[1].currencies);
+      if (currency.length > 0) {
+        console.log(i[0], count, "push this");
+
+        let market = {
+          [count]: [i[0], i[1]],
+        };
+        newCopy.push(market);
+
+        count++;
+      }
+    });
+    console.log(newCopy, markets, "cc");
+    setActiveMarkets(newCopy);
+  }, [markets]);
+  // console.log(activeMarkets, "active markets");
+
+  // const data = trpc.seed.market.useQuery({ text: "markets" });
+  let handleClick = () => {
+    if (marketLoaded == false) {
+      setMarketLoaded(!marketLoaded);
+    } else if (marketLoaded == true) {
+      console.log("market loaded check");
+    }
+  };
+
+  let priceClick = () => {
+    console.log("price check fuck ");
+    if (priceLoaded == false) {
+      setPriceLoaded(!priceLoaded);
+    } else if (priceLoaded == true) {
+      console.log("price already loaded");
+    }
+  };
   return (
     <>
       <Head>
@@ -18,8 +129,45 @@ const Home: NextPage = () => {
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
         <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
           <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-            Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
+            Create{" "}
+            <span className="text-[hsl(280,100%,70%)]">
+              Free Money - 0 Work -{" "}
+            </span>{" "}
+            App
           </h1>
+          {/* ////////////////////////////////////////////// */}
+          <button
+            onClick={handleClick}
+            className="rounded-lg bg-[hsl(280,100%,70%)] px-4 py-2 text-lg font-semibold text-white"
+          >
+            1. Current Market Data
+          </button>
+          {/* /////////////////////////// */}
+          <div>
+            <h4>
+              {marketLoaded
+                ? `market output is: ${currentMData}`
+                : `market is not active`}
+            </h4>
+            {marketLoaded && <CurrentMDataWrapper setState={setCurrentMData} />}
+          </div>
+          {/* //////////////////////////////////////////////////////////////////////////////////// */}
+          <button
+            onClick={priceClick}
+            className="rounded-lg bg-[hsl(280,100%,70%)] px-4 py-2 text-lg font-semibold text-white"
+          >
+            2. Current Price - All Markets
+          </button>
+          {/* //////////////////////////// */}
+          <div>
+            <h4>
+              {priceLoaded
+                ? `price output is: ${currentPData}`
+                : `price is not active`}
+            </h4>
+            {priceLoaded && <CurrentPriceWrapper setState={setCurrentPData} />}
+          </div>
+          {/* //////////////////////////////////////////////////////////////////////// */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
             <Link
               className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
@@ -27,8 +175,8 @@ const Home: NextPage = () => {
             >
               <h3 className="text-2xl font-bold">First Steps →</h3>
               <div className="text-lg">
-                Just the basics - Everything you need to know to set up your
-                database and authentication.
+                Don't worry, this probably won't be that hard. I don't really
+                think this will be useful.
               </div>
             </Link>
             <Link
@@ -37,16 +185,67 @@ const Home: NextPage = () => {
             >
               <h3 className="text-2xl font-bold">Documentation →</h3>
               <div className="text-lg">
-                Learn more about Create T3 App, the libraries it uses, and how
-                to deploy it.
+                Isn't it better just to figure it out as you go? Who reads the
+                directions anyway?
               </div>
             </Link>
           </div>
           <div className="flex flex-col items-center gap-2">
             <p className="text-2xl text-white">
-              {hello.data ? hello.data.greeting : "Loading tRPC query..."}
+              {hello.data ? hello.data.greeting : "marketLoaded tRPC query..."}
             </p>
+
             <AuthShowcase />
+            {/* <Conversions /> */}
+            <div className="item-center  gap 2 hidden w-full flex-row flex-wrap border border-solid border-white text-2xl text-white ">
+              {Object.keys(markets).length
+                ? Object.keys(markets).map((o, index) => {
+                    let item = Object.entries(markets)[index];
+                    let currency = Object.values(item[1].currencies);
+                    // let isConnected = []
+                    // if (currency.length > 0) {
+                    // }
+                    return (
+                      <div className="refCurrencyContainer">
+                        {currency.length > 0 ? (
+                          <div>
+                            <div
+                              key={index}
+                              className="flex flex-grow flex-col border border-solid border-white"
+                            >
+                              <div>
+                                <p className="text-3xl">{item[0]}</p>
+                                <ul>
+                                  {currency.length > 0
+                                    ? ((): any => {
+                                        console.log(activeMarkets, "ur");
+                                        return currency.map((k: any) => {
+                                          return (
+                                            <li className="text-1xl">{k.id}</li>
+                                          );
+                                        });
+                                      })()
+                                    : null}
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })
+                : "marketLoaded market query..."}
+            </div>
+            {/* this is where the fun begins */}
+            {activeMarkets.length > 0 && (
+              <MarketComp activeMarkets={activeMarkets} />
+            ) ? (
+              <>
+                <MarketComp activeMarkets={activeMarkets} />
+              </>
+            ) : (
+              "marketLoaded"
+            )}
           </div>
         </div>
       </main>
@@ -61,7 +260,7 @@ const AuthShowcase: React.FC = () => {
 
   const { data: secretMessage } = trpc.auth.getSecretMessage.useQuery(
     undefined, // no input
-    { enabled: sessionData?.user !== undefined },
+    { enabled: sessionData?.user !== undefined }
   );
 
   return (

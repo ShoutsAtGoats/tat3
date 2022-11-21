@@ -5,15 +5,26 @@ import { SessionProvider } from "next-auth/react";
 import { trpc } from "../utils/trpc";
 
 import "../styles/globals.css";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const MyApp: AppType<{ session: Session | null }> = ({
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+const MyApp: AppType<{ session: Session | null; client: ClientTypes }> = ({
   Component,
   pageProps: { session, ...pageProps },
 }) => {
   return (
-    <SessionProvider session={session}>
-      <Component {...pageProps} />
-    </SessionProvider>
+    <QueryClientProvider client={queryClient}>
+      <SessionProvider session={session}>
+        <Component {...pageProps} client={queryClient} />
+      </SessionProvider>
+    </QueryClientProvider>
   );
 };
 
