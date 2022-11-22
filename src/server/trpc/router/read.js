@@ -58,48 +58,122 @@ export const readRouter = router({
       //   return filterFunc;
 
       async function firstFunction(_callback) {
-        let m;
-        let id = "bitget";
-        let coinJson = fs.readFile(`${id}.json`, "utf8", (err, data) => {
-          if (err) throw err;
-          //   console.log(data);
-          return data;
-        });
-        let coinData = await JSON.parse(coinJson);
-        const blockRegex = /(?:\s*(?:\"([^\"]*)\"|([^,]+))\s*,?)+?/gm;
-        // do some asynchronous work
-        while ((m = blockRegex.exec(coinData)) !== null) {
-          // This is necessary to avoid infinite loops with zero-width matches
-          if (m.index === blockRegex.lastIndex) {
-            blockRegex.lastIndex++;
-          }
-
-          // The result can be accessed through the `m`-variable.
-          m.forEach((match, groupIndex) => {
-            // console.log(m);
-            console.log(`Group ${groupIndex} match: ${match}`);
-            answerArray.push([
-              JSON.stringify(groupIndex),
-              JSON.stringify(match),
-            ]);
+        async function readAndParse() {
+          let m;
+          let id = "bitget";
+          let coinJson = fs.readFile(`bitget.json`, "utf8", (err, data) => {
+            if (err) throw err;
+            //   console.log(data);
+            return data;
           });
-        }
-        (async () => {
-          _callback();
-        })();
+          // console.log(coinJson)
+          // let coinData = await JSON.parse(coinJson);
+          const blockRegex = /(?:\s*(?:\"([^\"]*)\"|([^,]+))\s*,?)+?/gm;
+          let counter = 0;
+          const readStream = fs.createReadStream(`bitget.json`, "utf8");
+          let rl = readline.createInterface({ input: readStream });
 
-        return answerArray;
-        // and when the asynchronous stuff is complete
+          rl.on("line", (line) => {
+            // const year = line.split(',')[2];
+            // const geo_count = line.split(',')[3];
+            // if (year === '2020' && geo_count >200) {
+            //     counter++
+            // }
+            counter++;
+            while ((m = blockRegex.exec(line)) !== null) {
+              // This is necessary to avoid infinite loops with zero-width matches
+              if (m.index === blockRegex.lastIndex) {
+                blockRegex.lastIndex++;
+              }
+
+              // The result can be accessed through the `m`-variable.
+              m.forEach((match, groupIndex) => {
+                console.log(answerArray.length, "length");
+                // console.log(m);
+                // console.log(`Group ${groupIndex} match: ${match}`);
+                answerArray.push([
+                  JSON.stringify(groupIndex),
+                  JSON.stringify(match),
+                ]);
+              });
+            }
+            if ((m = blockRegex.exec(line)) === null) {
+              console.log(answerArray.length, "end length");
+              return answerArray;
+            }
+          });
+
+          rl.on("error", (error) => console.log(error.message));
+          rl.on("close", () => {
+            console.log(
+              `About ${counter} areas have geographic units of over 200 units in 2020`
+            );
+            console.log("Data parsing completed");
+            return answerArray;
+          });
+
+          return answerArray;
+        }
+        readAndParse();
+        _callback;
       }
       const secondFunction = async () => {
-        const result = await firstFunction();
-        console.log(result, "idk");
-        // do something else here after firstFunction completes
+        firstFunction(() => {
+          console.log(answerArray.length, "im done, end length");
+          return answerArray;
+        });
+        console.log("idk");
+        // result;
+        // // do something else here after firstFunction completes
+        // return answerArray;
         return answerArray;
       };
-      return secondFunction().then(() => {
-        return answerArray;
-      });
+      console.log((() => secondFunction())(), "second function init");
+
+      // ///////////////////////////////// /////////////////////////////
+
+      //   async function firstFunction(_callback) {
+      //     let m;
+      //     let id = "bitget";
+      //     let coinJson = fs.readFile(`bitget.json`, "utf8", (err, data) => {
+      //       if (err) throw err;
+      //     //   console.log(data);
+      //       return data;
+      //     });
+      //     // console.log(coinJson)
+      //     let coinData = await JSON.parse(coinJson);
+      //     const blockRegex = /(?:\s*(?:\"([^\"]*)\"|([^,]+))\s*,?)+?/gm;
+      //     // do some asynchronous work
+      //     while ((m = blockRegex.exec(coinData)) !== null) {
+      //       // This is necessary to avoid infinite loops with zero-width matches
+      //       if (m.index === blockRegex.lastIndex) {
+      //         blockRegex.lastIndex++;
+      //       }
+
+      //       // The result can be accessed through the `m`-variable.
+      //       m.forEach((match, groupIndex) => {
+      //         // console.log(m);
+      //         console.log(`Group ${groupIndex} match: ${match}`);
+      //         answerArray.push([
+      //           JSON.stringify(groupIndex),
+      //           JSON.stringify(match),
+      //         ]);
+      //       });
+      //     }
+      //     (async () => {
+      //       _callback;
+      //     })();
+
+      //     return answerArray;
+      //     // and when the asynchronous stuff is complete
+      //   }
+      //   const secondFunction = async () => {
+      //     const result = await firstFunction(secondFunction());
+      //     console.log(result, "idk");
+      //     // do something else here after firstFunction completes
+      //     return answerArray;
+      //   };
+      //   return answerArray;
 
       //   function secondFunction() {
       //     // call first function and pass in a callback function which
@@ -114,6 +188,7 @@ export const readRouter = router({
       //     });
       //   }
       //   return ;
+      return answerArray;
     }),
   // getAll: publicProcedure.query(({ ctx }) => {
   //   return ctx.prisma.marketsRouter.findMany();
