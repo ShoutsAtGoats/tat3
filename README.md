@@ -26,8 +26,27 @@ Also checkout these awesome tutorials on `create-t3-app`.
 
 Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
 
+Ubuntu logs while loading
 
-boot error log
+```cmd
+[    0.217569]  core perfctr but no constraints: unknown hardware!
+[    0.961773]  kobject: can not set name properly!
+[    0.961804]  mce: Unable to init MCE device (rc: -22)
+[    0.965817]  ima: Error Communicating to TPM chip
+[    0.965826]  ima: Error Communicating to TPM chip
+[    0.965834]  ima: Error Communicating to TPM chip
+[    0.965841]  ima: Error Communicating to TPM chip
+[    0.965850]  ima: Error Communicating to TPM chip
+[    0.965857]  ima: Error Communicating to TPM chip
+[    0.965865]  ima: Error Communicating to TPM chip
+[    0.965872]  ima: Error Communicating to TPM chip
+[    1.075410]nouveau 0000:06:00.0 unknown chipset (b76000a1)
+
+
+```
+
+
+boot repair disk - error log
 
 ```cmd
 
@@ -286,4 +305,16 @@ Suggested repair: ______________________________________________________________
 The default repair of the Boot-Repair utility would not act on the MBR.
 Additional repair would be performed:  win-legacy-basic-fix
 
+```
+
+Ubuntu logs when powering down from Boot Repair Disk
+
+```cmd 
+  42.740216 shutdown[1]: Failed to wait for process: Protocol error
+  42.741484 shutdown[1]: Failed to wait for process: Protocol error
+  42.744063 shutdown[1]: Failed to wait for process: Protocol error
+  42.744693 shutdown[1]: Failed to wait for process: Protocol error
+  42.746076 shutdown[1]: Failed to wait for process: Protocol error
+  42.746911 shutdown[1]: Failed to wait for process: Protocol error
+  44.555753 usb usb3-port1: couldn't allocate usb_device
 ```
